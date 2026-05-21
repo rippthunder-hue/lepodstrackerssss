@@ -1,479 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>AirPods Tracker</title>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="AirPods Tracker">
-<meta name="theme-color" content="#0a0a0f">
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-:root {
-  --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c26; --border:#2a2a3a;
-  --accent:#7c6aff; --accent2:#00e5b0; --danger:#ff4f6a;
-  --text:#e8e8f0; --muted:#6b6b80; --profit:#00e5b0; --loss:#ff4f6a;
-  --warn:#ffb86c;
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom));}
-header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;padding-top:calc(16px + env(safe-area-inset-top));position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;}
-header h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px;}
-header h1 span{color:var(--accent);}
-.badge{background:var(--accent);color:white;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;}
-.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;}
-.tabs::-webkit-scrollbar{display:none;}
-.tab{padding:12px 18px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.2s;background:none;border-top:none;border-left:none;border-right:none;}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-.panel{display:none;padding:16px;}.panel.active{display:block;}
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;}
-.card-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
-.card-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
-.card-value.green{color:var(--profit);}.card-value.red{color:var(--loss);}.card-value.purple{color:var(--accent);}
-.section-title{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
-.form-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.form-group{margin-bottom:12px;}
-.form-group label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
-.form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color 0.2s;}
-.form-group input:focus,.form-group select:focus{border-color:var(--accent);}
-.form-group select option{background:var(--surface2);}
-.btn{width:100%;padding:12px;border-radius:10px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-bottom:8px;}
-.btn:active{opacity:0.8;transform:scale(0.98);}
-.btn-primary{background:var(--accent);color:white;}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
-.btn-danger{background:var(--danger);color:white;}
-.btn-warn{background:var(--warn);color:#000;}
-.list-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;position:relative;}
-.list-item-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
-.item-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding-right:24px;}
-.item-price{font-size:15px;font-weight:500;color:var(--accent2);white-space:nowrap;}
-.item-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
-.pill{font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
-.pill.cond-new{border-color:var(--accent2);color:var(--accent2);}
-.pill.cond-good{border-color:var(--accent);color:var(--accent);}
-.pill.cond-faulty{border-color:var(--danger);color:var(--danger);}
-.pill.s-instock{border-color:var(--accent2);color:var(--accent2);}
-.pill.s-listed{border-color:var(--warn);color:var(--warn);}
-.pill.s-packed{border-color:#a78bfa;color:#a78bfa;}
-.pill.s-dispatched{border-color:#38bdf8;color:#38bdf8;}
-.pill.s-sold{border-color:var(--muted);color:var(--muted);}
-.pill.sku{border-color:var(--accent);color:var(--accent);font-weight:bold;}
-.profit-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;}
-.profit-label{color:var(--muted);}
-.profit-val.pos{color:var(--profit);}
-.profit-val.neg{color:var(--loss);}
-.delete-btn{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px;}
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;}
-.empty-state .icon{font-size:32px;margin-bottom:10px;}
-.barcode-wrap{background:#fff;padding:10px 10px 6px;border-radius:8px;display:inline-block;margin-top:12px;text-align:center;}
-.barcode-wrap canvas{display:block;}
-/* SCANNER */
-.scan-box{background:var(--surface2);border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;margin-bottom:16px;cursor:pointer;transition:border-color 0.2s;}
-.scan-box:hover{border-color:var(--accent);}
-.scan-input{display:none;}
-#scan-video-wrap{border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px;position:relative;width:100%;height:160px;}
-#scan-video{width:100%;height:100%;object-fit:cover;display:block;}
-#scan-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88%;height:70px;border:none;pointer-events:none;}
-#scan-overlay::before,#scan-overlay::after{content:'';position:absolute;width:18px;height:18px;border-color:var(--accent2);border-style:solid;}
-#scan-overlay::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:3px 0 0 0;}
-#scan-overlay::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 3px 0 0;}
-#scan-overlay-b{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88%;height:70px;pointer-events:none;}
-#scan-overlay-b::before,#scan-overlay-b::after{content:'';position:absolute;width:18px;height:18px;border-color:var(--accent2);border-style:solid;}
-#scan-overlay-b::before{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 3px;}
-#scan-overlay-b::after{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 3px 0;}
-#scan-line{position:absolute;top:50%;left:6%;transform:translateY(-50%);width:88%;height:2px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);animation:scanline 1.8s ease-in-out infinite;pointer-events:none;}
-@keyframes scanline{0%,100%{top:calc(50% - 28px);}50%{top:calc(50% + 28px);}}
-.result-card{background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:16px;margin-bottom:16px;display:none;}
-.result-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent2);margin-bottom:8px;}
-.status-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
-.status-btn{padding:10px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.2s;text-align:center;}
-.status-btn.active-status{border-color:var(--accent);color:var(--accent);background:rgba(124,106,255,0.1);}
-.status-btn:hover{border-color:var(--accent);color:var(--accent);}
-</style>
-</head>
-<body>
-<header>
-  <h1>Air<span>Pods</span> Tracker</h1>
-  <span class="badge">PRO</span>
-</header>
-<div class="tabs">
-  <button class="tab active" onclick="goTab('dashboard',this)">Dashboard</button>
-  <button class="tab" onclick="goTab('stock',this)">Stock</button>
-  <button class="tab" onclick="goTab('scanner',this)">Scanner 📷</button>
-  <button class="tab" onclick="goTab('sales',this)">Sales</button>
-  <button class="tab" onclick="goTab('expenses',this)">Expenses</button>
-</div>
-
-<!-- DASHBOARD -->
-<div class="panel active" id="tab-dashboard">
-  <div class="summary-grid" style="margin-top:16px">
-    <div class="card"><div class="card-label">Total Revenue</div><div class="card-value purple" id="st-rev">£0</div></div>
-    <div class="card"><div class="card-label">Net Profit</div><div class="card-value green" id="st-prof">£0</div></div>
-    <div class="card"><div class="card-label">Active Stock</div><div class="card-value" id="st-stock">0</div></div>
-    <div class="card"><div class="card-label">Total Expenses</div><div class="card-value red" id="st-exp">£0</div></div>
-  </div>
-  <div class="section-title">Recent Sales</div>
-  <div id="dash-sales"><div class="empty-state"><div class="icon">📦</div>No sales yet</div></div>
-  <div class="section-title" style="margin-top:20px">Danger Zone</div>
-  <button class="btn btn-danger" onclick="clearAll()">⚠️ Wipe All Data</button>
-</div>
-
-<!-- STOCK -->
-<div class="panel" id="tab-stock">
-  <div class="section-title" style="margin-top:4px">Add Stock</div>
-  <div class="form-card">
-    <div class="form-group">
-      <label>Item Name</label>
-      <input type="text" id="s-name" placeholder="e.g. AirPods Pro 2nd Gen">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Condition</label>
-        <select id="s-cond">
-          <option>New</option><option>Like New</option><option>Good</option><option>Faulty</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Buy Price (£)</label>
-        <input type="number" id="s-buy" placeholder="0.00">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Source</label>
-        <input type="text" id="s-src" placeholder="e.g. Vinted">
-      </div>
-      <div class="form-group">
-        <label>Model No.</label>
-        <input type="text" id="s-model" placeholder="e.g. A2698">
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="addStock()">+ Add Stock & Generate Barcode</button>
-    <button class="btn btn-secondary" onclick="printAllLabels()">🖨️ Print All Labels</button>
-  </div>
-  <div class="section-title">Current Stock</div>
-  <div id="stock-list"><div class="empty-state"><div class="icon">📱</div>No stock added yet</div></div>
-</div>
-
-<!-- SCANNER -->
-<div class="panel" id="tab-scanner">
-  <div class="section-title" style="margin-top:4px">Scan Barcode</div>
-
-  <!-- Camera feed -->
-  <div id="scan-video-wrap" style="display:none;margin-bottom:12px;">
-    <video id="scan-video" autoplay playsinline muted></video>
-    <div id="scan-overlay"></div>
-    <div id="scan-overlay-b"></div>
-    <div id="scan-line"></div>
-  </div>
-  <div id="scan-status" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;min-height:16px;"></div>
-  <button class="btn btn-primary" id="scan-start-btn" onclick="startCamera()">📷 Start Live Barcode Scanner</button>
-  <div id="scan-controls" style="display:none;gap:8px;display:none;flex-direction:row;">
-    <button class="btn btn-secondary" onclick="stopCamera()" id="scan-stop-btn" style="margin:0;flex:1">■ Stop</button>
-    <button class="btn btn-secondary" onclick="toggleFlash()" id="flash-btn" style="margin:0;width:56px;font-size:18px;flex-shrink:0">🔦</button>
-  </div>
-
-  <!-- Photo upload -->
-  <div class="scan-box" onclick="document.getElementById('barcode-file').click()" style="margin-top:4px;">
-    <div style="font-size:24px;margin-bottom:8px">📁</div>
-    <div style="font-size:12px;color:var(--muted)">Scan barcode from photo / screenshot</div>
-    <input type="file" id="barcode-file" accept="image/*" class="scan-input" onchange="scanFromFile(event)">
-  </div>
-
-  <!-- Manual fallback -->
-  <div style="margin-bottom:12px">
-    <div class="form-group">
-      <label>Or type SKU manually</label>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="manual-sku" placeholder="AP-NE-VI-1234" style="flex:1">
-        <button class="btn btn-primary" style="width:auto;padding:10px 16px;margin:0" onclick="lookupSku(document.getElementById('manual-sku').value.trim())">Go</button>
-      </div>
-    </div>
-  </div>
-  <div class="result-card" id="scan-result">
-    <div class="result-name" id="res-name">-</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:4px">SKU: <span id="res-sku" style="color:var(--accent)">-</span></div>
-    <div style="font-size:11px;color:var(--muted)">Condition: <span id="res-cond" style="color:var(--text)">-</span> | Buy Price: <span id="res-buy" style="color:var(--text)">-</span></div>
-    <div class="section-title" style="margin-top:16px">Update Status</div>
-    <div class="status-btns">
-      <button class="status-btn" onclick="setStatus('In Stock')">📦 In Stock</button>
-      <button class="status-btn" onclick="setStatus('Listed')">📋 Listed</button>
-      <button class="status-btn" onclick="setStatus('Packed')">📫 Packed</button>
-      <button class="status-btn" onclick="setStatus('Dispatched')">🚚 Dispatched</button>
-      <button class="status-btn" onclick="setStatus('Sold')" style="grid-column:span 2">✅ Mark as Sold</button>
-    </div>
-  </div>
-</div>
-
-<!-- SALES -->
-<div class="panel" id="tab-sales">
-  <div class="section-title" style="margin-top:4px">Log a Sale</div>
-  <div class="form-card">
-    <div class="form-group">
-      <label>Link to Stock Item (optional)</label>
-      <select id="sl-sku" onchange="autofillSale()">
-        <option value="">-- Pick from stock --</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Item Sold</label>
-      <input type="text" id="sl-name" placeholder="e.g. AirPods Pro 2nd Gen">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Sale Price (£)</label>
-        <input type="number" id="sl-sale" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label>Buy Price (£)</label>
-        <input type="number" id="sl-buy" placeholder="0.00">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Platform</label>
-        <select id="sl-plat">
-          <option>eBay</option><option>Depop</option><option>Vinted</option><option>Cash</option><option>Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Fees (£)</label>
-        <input type="number" id="sl-fees" placeholder="0.00">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Date Sold</label>
-      <input type="date" id="sl-date">
-    </div>
-    <button class="btn btn-primary" onclick="addSale()">+ Log Sale</button>
-  </div>
-  <div class="section-title">Sales History</div>
-  <div id="sales-list"><div class="empty-state"><div class="icon">💰</div>No sales yet</div></div>
-</div>
-
-<!-- EXPENSES -->
-<div class="panel" id="tab-expenses">
-  <div class="section-title" style="margin-top:4px">Add Expense</div>
-  <div class="form-card">
-    <div class="form-group">
-      <label>Description</label>
-      <input type="text" id="e-desc" placeholder="e.g. Bubble wrap">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Amount (£)</label>
-        <input type="number" id="e-amt" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select id="e-cat">
-          <option>Packaging</option><option>Fees</option><option>Tools</option><option>Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Date</label>
-      <input type="date" id="e-date">
-    </div>
-    <button class="btn btn-primary" onclick="addExpense()">+ Add Expense</button>
-  </div>
-  <div class="section-title">Expense History</div>
-  <div id="exp-list"><div class="empty-state"><div class="icon">🧾</div>No expenses yet</div></div>
-</div>
-
-<script>
-// ─── DATA ───────────────────────────────────────────────
-let DB = JSON.parse(localStorage.getItem('ap-tracker-v2') || '{"stock":[],"sales":[],"expenses":[]}');
-function save(){ localStorage.setItem('ap-tracker-v2', JSON.stringify(DB)); }
-
-// ─── PURE JS CODE128 BARCODE ────────────────────────────
-const C128_PATTERNS = [
-  '11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000',
-  '10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100',
-  '10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110',
-  '11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100',
-  '11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000',
-  '10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010',
-  '10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110',
-  '11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110',
-  '11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010',
-  '10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000',
-  '10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000',
-  '11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100',
-  '10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110',
-  '11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000',
-  '11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000',
-  '11010011100','1100011101011'
-];
-const C128B_CHARS = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
-
-function drawBarcode(canvas, text) {
-  const START = 104, STOP = 106;
-  let codes = [START];
-  let check = START;
-  for(let i=0;i<text.length;i++){
-    const idx = C128B_CHARS.indexOf(text[i]);
-    if(idx < 0) continue;
-    codes.push(idx);
-    check += (i+1)*idx;
-  }
-  codes.push(check % 103);
-  codes.push(STOP);
-
-  let bits = '';
-  codes.forEach(c => { bits += C128_PATTERNS[c] || ''; });
-
-  const bw = 2, h = 55, pad = 10;
-  canvas.width = bits.length * bw + pad*2;
-  canvas.height = h + 22;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='#000';
-  for(let i=0;i<bits.length;i++){
-    if(bits[i]==='1') ctx.fillRect(pad + i*bw, 4, bw, h);
-  }
-  ctx.font='9px monospace'; ctx.textAlign='center'; ctx.fillStyle='#000';
-  ctx.fillText(text, canvas.width/2, h+18);
-}
-
-function barcodeDataURL(sku){
-  const c = document.createElement('canvas');
-  drawBarcode(c, sku);
-  return c.toDataURL();
-}
-
-// ─── PURE JS QR CODE (matrix, no library) ──────────────
-// Minimal QR for short alphanumeric strings via a simple approach
-// We'll use a reliable canvas-based QR that works offline
-function drawQR(canvas, text) {
-  // Use a simple dot-matrix approach encoding text visually
-  // For full QR we generate using a compact implementation
-  const size = 21; // Version 1 QR
-  canvas.width = size * 6 + 16;
-  canvas.height = size * 6 + 16;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  // We'll use the barcode as primary scan target; QR is supplementary
-  // Draw a simple visual placeholder with the SKU text as fallback
-  ctx.fillStyle = '#000';
-  ctx.font = 'bold 10px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('SKU:', canvas.width/2, 20);
-  ctx.fillText(text, canvas.width/2, 36);
-}
-
-// ─── SKU GENERATOR ──────────────────────────────────────
-function makeSku(cond, src){
-  const c = cond.replace(/\s/g,'').substring(0,2).toUpperCase();
-  const s = (src||'XX').replace(/\s/g,'').substring(0,2).toUpperCase();
-  const n = Math.floor(1000+Math.random()*9000);
-  return `AP-${c}-${s}-${n}`;
-}
-
-// ─── TABS ────────────────────────────────────────────────
-function goTab(tab, el){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  if(el) el.classList.add('active');
-  if(tab==='dashboard') renderDash();
-  if(tab==='stock') renderStock();
-  if(tab==='sales'){ renderSales(); buildSalePicker(); }
-  if(tab==='expenses') renderExp();
-  if(tab!=='scanner') stopCamera();
-}
-
-// ─── STOCK ───────────────────────────────────────────────
-function addStock(){
-  const name = document.getElementById('s-name').value.trim();
-  if(!name) return alert('Enter item name');
-  const cond = document.getElementById('s-cond').value;
-  const buy  = parseFloat(document.getElementById('s-buy').value)||0;
-  const src  = document.getElementById('s-src').value.trim();
-  const model= document.getElementById('s-model').value.trim()||'N/A';
-  const sku  = makeSku(cond, src);
-  DB.stock.push({ id:Date.now(), sku, name, cond, buy, src, model, status:'In Stock' });
-  save(); renderStock(); renderDash();
-  ['s-name','s-buy','s-src','s-model'].forEach(id=>document.getElementById(id).value='');
-}
-
-function condClass(c){
-  if(c==='New'||c==='Like New') return 'cond-new';
-  if(c==='Good') return 'cond-good';
-  if(c==='Faulty') return 'cond-faulty';
-  return '';
-}
-function statusClass(s){
-  const m={'In Stock':'s-instock','Listed':'s-listed','Packed':'s-packed','Dispatched':'s-dispatched','Sold':'s-sold'};
-  return m[s]||'s-instock';
-}
-
-function renderStock(){
-  const el = document.getElementById('stock-list');
-  if(!DB.stock.length){ el.innerHTML='<div class="empty-state"><div class="icon">📱</div>No stock added yet</div>'; return; }
-  el.innerHTML = DB.stock.map(i=>`
-    <div class="list-item">
-      <button class="delete-btn" onclick="delItem('stock',${i.id})">✕</button>
-      <div class="list-item-header">
-        <div class="item-name">${i.name}</div>
-        <div class="item-price">${fmt(i.buy)}</div>
-      </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px">Model: <span style="color:var(--text)">${i.model}</span></div>
-      <div class="item-meta">
-        <span class="pill sku">${i.sku}</span>
-        <span class="pill ${condClass(i.cond)}">${i.cond}</span>
-        <span class="pill ${statusClass(i.status)}">${i.status}</span>
-        ${i.src?`<span class="pill">${i.src}</span>`:''}
-      </div>
-      <div style="text-align:center;margin-top:12px;">
-        <div class="barcode-wrap" id="bc-${i.sku}"></div>
-      </div>
-    </div>
-  `).join('');
-  DB.stock.forEach(i=>{
-    const wrap = document.getElementById('bc-'+i.sku);
-    if(wrap){
-      const c = document.createElement('canvas');
-      drawBarcode(c, i.sku);
-      wrap.appendChild(c);
-    }
-  });
-}
-
-function printAllLabels(){
-  if(!DB.stock.length) return alert('No stock to print');
-  const labels = DB.stock.map(i=>{
-    const c = document.createElement('canvas');
-    drawBarcode(c, i.sku);
-    const img = c.toDataURL();
-    return `<div class="tile">
-      <div class="name">${i.name}</div>
-      <div class="meta">${i.cond} | ${i.src||''} | ${fmt(i.buy)}</div>
-      <img src="${img}" style="width:100%;margin:4px 0">
-      <div class="sku">${i.sku}</div>
-    </div>`;
-  }).join('');
-  const win = window.open('','_blank');
-  win.document.write(`<html><head><style>
-    body{font-family:monospace;padding:10px;background:#fff;}
-    .tile{display:inline-block;border:1px dashed #999;padding:8px;margin:6px;width:160px;vertical-align:top;text-align:center;}
-    .name{font-weight:bold;font-size:11px;margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-    .meta{font-size:9px;color:#666;margin-bottom:4px;}
-    .sku{font-size:9px;color:#333;margin-top:2px;}
-    @media print{body{padding:0;}}
-  </style></head><body>${labels}<script>window.onload=()=>{setTimeout(()=>window.print(),300)}<\/script></body></html>`);
-  win.document.close();
-}
-
-// ─── SCANNER (ZXing) ─────────────────────────────────────
-let zxingReader = null;
+// ─── SCANNER (html5-qrcode) ───────────────────────────────
+let h5scanner = null;
 let currentScanSku = null;
+let flashOn = false;
+let activeTrack = null;
 
 function setScanStatus(msg, col){
   const el = document.getElementById('scan-status');
@@ -481,69 +10,111 @@ function setScanStatus(msg, col){
   el.style.color = col || 'var(--muted)';
 }
 
-function getZXing(){
-  return window.ZXing || window.ZXingBrowser || null;
-}
-
-let flashOn = false;
-let activeTrack = null;
-
 function startCamera(){
-  const ZXing = getZXing();
-  if(!ZXing){
-    setScanStatus('⚠️ Scanner library not loaded yet — try refreshing.', 'var(--danger)');
+  if(typeof Html5Qrcode === 'undefined'){
+    setScanStatus('⚠️ Scanner not loaded — check internet connection and refresh.', 'var(--danger)');
     return;
   }
 
-  document.getElementById('scan-video-wrap').style.display = 'block';
+  document.getElementById('qr-reader').style.display = 'block';
   document.getElementById('scan-start-btn').style.display = 'none';
-  const ctrl = document.getElementById('scan-controls');
-  ctrl.style.display = 'flex';
+  document.getElementById('scan-controls').style.display = 'flex';
   flashOn = false;
-  document.getElementById('flash-btn').style.background = '';
-  setScanStatus('🔍 Scanning… point camera at barcode', 'var(--accent2)');
+  document.getElementById('flash-btn').style.cssText = '';
+  setScanStatus('🔍 Point camera at barcode…', 'var(--accent2)');
 
-  // Grab the camera track for torch control
-  navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } }).then(stream => {
-    activeTrack = stream.getVideoTracks()[0];
-  }).catch(()=>{});
+  h5scanner = new Html5Qrcode('qr-reader');
 
-  try {
-    const ReaderClass = ZXing.BrowserMultiFormatReader || ZXing.BrowserBarcodeReader;
-    zxingReader = new ReaderClass();
-    zxingReader.decodeFromVideoDevice(null, 'scan-video', (result, err) => {
-      if(result){
-        const text = result.getText();
-        setScanStatus('✅ Scanned: ' + text, 'var(--accent2)');
-        lookupSku(text);
-      }
-    });
-  } catch(e) {
-    setScanStatus('Camera error: ' + e.message, 'var(--danger)');
+  const config = {
+    fps: 15,
+    // Wide rectangle aspect ratio for barcodes
+    qrbox: { width: Math.min(window.innerWidth - 48, 320), height: 100 },
+    aspectRatio: 2.5,
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.DATA_MATRIX,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+    ]
+  };
+
+  h5scanner.start(
+    { facingMode: 'environment' },
+    config,
+    (decodedText) => {
+      setScanStatus('✅ Scanned: ' + decodedText, 'var(--accent2)');
+      if(navigator.vibrate) navigator.vibrate([80, 40, 80]);
+      lookupSku(decodedText.trim());
+    },
+    () => {} // silent errors while scanning
+  ).then(() => {
+    // Grab video track for torch after camera starts
+    const video = document.querySelector('#qr-reader video');
+    if(video && video.srcObject){
+      const tracks = video.srcObject.getVideoTracks();
+      if(tracks.length) activeTrack = tracks[0];
+    }
+    // Style the viewfinder to look like a barcode scanner
+    styleScanner();
+  }).catch(err => {
+    setScanStatus('❌ Camera error: ' + err, 'var(--danger)');
     stopCamera();
-  }
+  });
+}
+
+function styleScanner(){
+  // Override html5-qrcode default styles to match our dark theme
+  const reader = document.getElementById('qr-reader');
+  const style = document.createElement('style');
+  style.textContent = `
+    #qr-reader { border: none !important; padding: 0 !important; background: #000 !important; border-radius: 12px !important; overflow: hidden !important; }
+    #qr-reader video { border-radius: 12px !important; }
+    #qr-reader__scan_region { background: transparent !important; }
+    #qr-reader__scan_region img { display: none !important; }
+    #qr-reader__dashboard { display: none !important; }
+    #qr-reader__status_span { display: none !important; }
+  `;
+  document.head.appendChild(style);
 }
 
 function toggleFlash(){
-  if(!activeTrack){ setScanStatus('Flash not available — start scanner first', 'var(--danger)'); return; }
+  if(!activeTrack){
+    // Try to find it now
+    const video = document.querySelector('#qr-reader video');
+    if(video && video.srcObject){
+      const tracks = video.srcObject.getVideoTracks();
+      if(tracks.length) activeTrack = tracks[0];
+    }
+  }
+  if(!activeTrack){ setScanStatus('⚠️ Start scanner first', 'var(--warn)'); return; }
   const caps = activeTrack.getCapabilities ? activeTrack.getCapabilities() : {};
-  if(!caps.torch){ setScanStatus('⚠️ Torch not supported on this device', 'var(--warn)'); return; }
+  if(!caps.torch){ setScanStatus('⚠️ Torch not supported on this device/browser', 'var(--warn)'); return; }
   flashOn = !flashOn;
   activeTrack.applyConstraints({ advanced: [{ torch: flashOn }] })
     .then(()=>{
       const btn = document.getElementById('flash-btn');
-      btn.style.background = flashOn ? '#ffb86c' : '';
-      btn.style.color = flashOn ? '#000' : '';
+      if(flashOn){ btn.style.background='#ffb86c'; btn.style.color='#000'; btn.textContent='💡'; }
+      else { btn.style.cssText=''; btn.textContent='🔦'; }
       setScanStatus(flashOn ? '🔦 Flash ON' : '🔦 Flash OFF', 'var(--warn)');
     })
     .catch(()=>{ setScanStatus('⚠️ Could not toggle flash', 'var(--danger)'); });
 }
 
 function stopCamera(){
-  if(zxingReader){ try { zxingReader.reset(); } catch(e){} zxingReader = null; }
-  if(activeTrack){ try { activeTrack.applyConstraints({ advanced:[{ torch:false }] }); activeTrack.stop(); } catch(e){} activeTrack = null; }
+  if(h5scanner){
+    h5scanner.stop().catch(()=>{});
+    h5scanner = null;
+  }
+  if(activeTrack){
+    try { activeTrack.applyConstraints({ advanced:[{ torch:false }] }); } catch(e){}
+    activeTrack = null;
+  }
   flashOn = false;
-  document.getElementById('scan-video-wrap').style.display = 'none';
+  document.getElementById('qr-reader').style.display = 'none';
   document.getElementById('scan-start-btn').style.display = 'block';
   document.getElementById('scan-controls').style.display = 'none';
   setScanStatus('');
@@ -554,173 +125,6 @@ function scanFromFile(event){
   if(!file) return;
   event.target.value = '';
 
-  const ZXing = getZXing();
-  if(!ZXing){
-    setScanStatus('⚠️ Scanner library not loaded — try refreshing.', 'var(--danger)');
+  if(typeof Html5Qrcode === 'undefined'){
+    setScanStatus('⚠️ Scanner not loaded — check internet and refresh.', 'var(--danger)');
     return;
-  }
-
-  const url = URL.createObjectURL(file);
-  setScanStatus('🔍 Decoding image…', 'var(--warn)');
-
-  try {
-    const ReaderClass = ZXing.BrowserMultiFormatReader || ZXing.BrowserBarcodeReader;
-    const reader = new ReaderClass();
-    reader.decodeFromImageUrl(url).then(result => {
-      URL.revokeObjectURL(url);
-      const text = result.getText();
-      setScanStatus('✅ Decoded: ' + text, 'var(--accent2)');
-      lookupSku(text);
-    }).catch(()=>{
-      URL.revokeObjectURL(url);
-      setScanStatus('❌ Could not read barcode from image. Try a clearer photo.', 'var(--danger)');
-    });
-  } catch(e) {
-    setScanStatus('Error: ' + e.message, 'var(--danger)');
-  }
-}
-
-function lookupSku(sku){
-  if(!sku) return;
-  const item = DB.stock.find(i=>i.sku===sku);
-  if(!item){ alert(`No item found with SKU: ${sku}`); return; }
-  currentScanSku = sku;
-  const card = document.getElementById('scan-result');
-  card.style.display = 'block';
-  document.getElementById('res-name').textContent = item.name;
-  document.getElementById('res-sku').textContent = item.sku;
-  document.getElementById('res-cond').textContent = item.cond;
-  document.getElementById('res-buy').textContent = fmt(item.buy);
-  // Highlight active status
-  document.querySelectorAll('.status-btn').forEach(b=>{
-    b.classList.toggle('active-status', b.textContent.includes(item.status));
-  });
-  if(navigator.vibrate) navigator.vibrate(80);
-}
-
-function setStatus(status){
-  if(!currentScanSku) return;
-  const idx = DB.stock.findIndex(i=>i.sku===currentScanSku);
-  if(idx===-1) return;
-  DB.stock[idx].status = status;
-  save();
-  document.querySelectorAll('.status-btn').forEach(b=>{
-    b.classList.toggle('active-status', b.textContent.includes(status));
-  });
-  // Show confirmation flash
-  const card = document.getElementById('scan-result');
-  const orig = card.style.borderColor;
-  card.style.borderColor = 'var(--accent2)';
-  setTimeout(()=>{ card.style.borderColor=orig; }, 600);
-}
-
-// ─── SALES ───────────────────────────────────────────────
-function buildSalePicker(){
-  const sel = document.getElementById('sl-sku');
-  sel.innerHTML = '<option value="">-- Pick from stock --</option>';
-  DB.stock.filter(i=>i.status!=='Sold').forEach(i=>{
-    sel.innerHTML += `<option value="${i.sku}">[${i.sku}] ${i.name}</option>`;
-  });
-}
-function autofillSale(){
-  const sku = document.getElementById('sl-sku').value;
-  const item = DB.stock.find(i=>i.sku===sku);
-  if(item){
-    document.getElementById('sl-name').value = item.name;
-    document.getElementById('sl-buy').value = item.buy;
-  }
-}
-function addSale(){
-  const name = document.getElementById('sl-name').value.trim();
-  if(!name) return alert('Enter item name');
-  const sku   = document.getElementById('sl-sku').value;
-  const sale  = parseFloat(document.getElementById('sl-sale').value)||0;
-  const buy   = parseFloat(document.getElementById('sl-buy').value)||0;
-  const fees  = parseFloat(document.getElementById('sl-fees').value)||0;
-  const plat  = document.getElementById('sl-plat').value;
-  const date  = document.getElementById('sl-date').value||today();
-  if(sku){ const idx=DB.stock.findIndex(i=>i.sku===sku); if(idx!==-1) DB.stock[idx].status='Sold'; }
-  DB.sales.push({ id:Date.now(), sku:sku||'MANUAL', name, sale, buy, fees, plat, date });
-  save(); renderSales(); renderDash();
-  ['sl-name','sl-sale','sl-buy','sl-fees'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('sl-sku').value='';
-}
-function renderSales(){
-  const el=document.getElementById('sales-list');
-  if(!DB.sales.length){ el.innerHTML='<div class="empty-state"><div class="icon">💰</div>No sales yet</div>'; return; }
-  el.innerHTML=DB.sales.map(i=>{
-    const p=i.sale-i.buy-i.fees;
-    return `<div class="list-item">
-      <button class="delete-btn" onclick="delItem('sales',${i.id})">✕</button>
-      <div class="list-item-header"><div class="item-name">${i.name}</div><div class="item-price">${fmt(i.sale)}</div></div>
-      <div class="item-meta">
-        <span class="pill sku">${i.sku}</span>
-        <span class="pill">${i.plat}</span>
-        <span class="pill">${i.date}</span>
-        ${i.fees?`<span class="pill">Fees: ${fmt(i.fees)}</span>`:''}
-      </div>
-      <div class="profit-row"><span class="profit-label">Net Profit</span><span class="profit-val ${p>=0?'pos':'neg'}">${fmt(p)}</span></div>
-    </div>`;
-  }).join('');
-}
-
-// ─── EXPENSES ────────────────────────────────────────────
-function addExpense(){
-  const desc=document.getElementById('e-desc').value.trim();
-  if(!desc) return alert('Enter description');
-  const amt=parseFloat(document.getElementById('e-amt').value)||0;
-  const cat=document.getElementById('e-cat').value;
-  const date=document.getElementById('e-date').value||today();
-  DB.expenses.push({ id:Date.now(), desc, amt, cat, date });
-  save(); renderExp(); renderDash();
-  document.getElementById('e-desc').value='';
-  document.getElementById('e-amt').value='';
-}
-function renderExp(){
-  const el=document.getElementById('exp-list');
-  if(!DB.expenses.length){ el.innerHTML='<div class="empty-state"><div class="icon">🧾</div>No expenses yet</div>'; return; }
-  el.innerHTML=DB.expenses.map(i=>`
-    <div class="list-item">
-      <button class="delete-btn" onclick="delItem('expenses',${i.id})">✕</button>
-      <div class="list-item-header"><div class="item-name">${i.desc}</div><div class="item-price" style="color:var(--danger)">${fmt(i.amt)}</div></div>
-      <div class="item-meta"><span class="pill">${i.cat}</span><span class="pill">${i.date}</span></div>
-    </div>`).join('');
-}
-
-// ─── DASHBOARD ───────────────────────────────────────────
-function renderDash(){
-  const rev=DB.sales.reduce((a,i)=>a+i.sale,0);
-  const sp=DB.sales.reduce((a,i)=>a+(i.sale-i.buy-i.fees),0);
-  const exp=DB.expenses.reduce((a,i)=>a+i.amt,0);
-  const prof=sp-exp;
-  const active=DB.stock.filter(i=>i.status!=='Sold').length;
-  document.getElementById('st-rev').textContent=fmt(rev);
-  document.getElementById('st-prof').textContent=fmt(prof);
-  document.getElementById('st-prof').className='card-value '+(prof>=0?'green':'red');
-  document.getElementById('st-stock').textContent=active;
-  document.getElementById('st-exp').textContent=fmt(exp);
-  const el=document.getElementById('dash-sales');
-  const recent=[...DB.sales].sort((a,b)=>b.id-a.id).slice(0,3);
-  if(!recent.length){ el.innerHTML='<div class="empty-state"><div class="icon">📦</div>No sales yet</div>'; return; }
-  el.innerHTML=recent.map(i=>{
-    const p=i.sale-i.buy-i.fees;
-    return `<div class="list-item">
-      <div class="list-item-header"><div class="item-name">${i.name}</div><div class="item-price">${fmt(i.sale)}</div></div>
-      <div class="profit-row"><span class="profit-label">${i.plat} · ${i.date}</span><span class="profit-val ${p>=0?'pos':'neg'}">${fmt(p)}</span></div>
-    </div>`;
-  }).join('');
-}
-
-// ─── UTILS ───────────────────────────────────────────────
-function fmt(n){ return '£'+parseFloat(n||0).toFixed(2); }
-function today(){ return new Date().toISOString().split('T')[0]; }
-function delItem(type,id){ DB[type]=DB[type].filter(i=>i.id!==id); save(); renderDash(); renderStock(); renderSales(); renderExp(); }
-function clearAll(){ if(confirm('Wipe all data?')){ DB={stock:[],sales:[],expenses:[]}; save(); renderDash(); renderStock(); renderSales(); renderExp(); } }
-
-// ─── INIT ────────────────────────────────────────────────
-renderDash();
-document.getElementById('sl-date').value = today();
-document.getElementById('e-date').value  = today();
-</script>
-</body>
-</html>
