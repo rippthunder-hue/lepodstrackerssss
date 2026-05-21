@@ -5,656 +5,261 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AirPods Business Tracker</title>
 
-<!-- iPhone PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="AirPods Tracker">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0a0f">
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
 
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c26;
-    --border: #2a2a3a;
-    --accent: #7c6aff;
-    --accent2: #00e5b0;
-    --danger: #ff4f6a;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --profit: #00e5b0;
-    --loss: #ff4f6a;
+    --bg:#0a0a0f;
+    --surface:#13131a;
+    --surface2:#1c1c26;
+    --border:#2a2a3a;
+    --accent:#7c6aff;
+    --accent2:#00e5b0;
+    --danger:#ff4f6a;
+    --text:#e8e8f0;
+    --muted:#6b6b80;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  *{margin:0;padding:0;box-sizing:border-box}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    padding: 0 0 calc(80px + env(safe-area-inset-bottom)) 0;
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'DM Mono', monospace;
   }
 
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
-    padding-top: calc(16px + env(safe-area-inset-top));
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  header{
+    padding:16px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
   }
 
-  header h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
+  header h1{
+    font-family:'Syne';
+    font-weight:800;
   }
 
-  header h1 span { color: var(--accent); }
-
-  .badge {
-    background: var(--accent);
-    color: white;
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-weight: 500;
+  .badge{
+    background:var(--accent);
+    padding:3px 10px;
+    border-radius:20px;
+    font-size:10px;
   }
 
-  /* TABS */
-  .tabs {
-    display: flex;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .tabs::-webkit-scrollbar { display: none; }
-
-  .tab {
-    padding: 12px 20px;
-    font-size: 12px;
-    font-family: 'DM Mono', monospace;
-    color: var(--muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
-    transition: all 0.2s;
-    background: none;
-    border-top: none;
-    border-left: none;
-    border-right: none;
-  }
-  .tab.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
+  .tabs{
+    display:flex;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
   }
 
-  .panel { display: none; padding: 16px; }
-  .panel.active { display: block; }
-
-  /* SUMMARY CARDS */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 20px;
+  .tab{
+    flex:1;
+    padding:12px;
+    background:none;
+    border:none;
+    color:var(--muted);
+    cursor:pointer;
   }
 
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
+  .tab.active{
+    color:var(--accent);
+    border-bottom:2px solid var(--accent);
   }
 
-  .card-label {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+  .panel{display:none;padding:16px}
+  .panel.active{display:block}
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:16px;
   }
 
-  .card-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    padding:14px;
+    border-radius:10px;
   }
 
-  .card-value.green { color: var(--profit); }
-  .card-value.red { color: var(--loss); }
-  .card-value.purple { color: var(--accent); }
-
-  /* SECTION */
-  .section-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--muted);
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
+  .label{
+    font-size:10px;
+    color:var(--muted);
   }
 
-  /* FORM */
-  .form-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 20px;
+  .value{
+    font-family:'Syne';
+    font-size:20px;
+    margin-top:6px;
   }
 
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  input,select{
+    width:100%;
+    padding:10px;
+    margin:6px 0;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:8px;
   }
 
-  .form-group {
-    margin-bottom: 12px;
+  button.add{
+    width:100%;
+    padding:12px;
+    background:var(--accent);
+    border:none;
+    color:white;
+    font-family:'Syne';
+    font-weight:700;
+    border-radius:10px;
   }
 
-  .form-group label {
-    display: block;
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+  .item{
+    background:var(--surface);
+    padding:12px;
+    margin-top:10px;
+    border-radius:10px;
+    border:1px solid var(--border);
   }
 
-  .form-group input,
-  .form-group select {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .form-group input:focus,
-  .form-group select:focus {
-    border-color: var(--accent);
-  }
-
-  .form-group select option { background: var(--surface2); }
-
-  .btn {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: white;
-  }
-
-  .btn-primary:active { opacity: 0.8; transform: scale(0.98); }
-
-  /* LIST ITEMS */
-  .list-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 10px;
-    position: relative;
-  }
-
-  .list-item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-  }
-
-  .item-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .item-price {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--accent2);
-  }
-
-  .item-meta {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .pill {
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 20px;
-    background: var(--surface2);
-    color: var(--muted);
-    border: 1px solid var(--border);
-  }
-
-  .pill.new { border-color: var(--accent2); color: var(--accent2); }
-  .pill.good { border-color: var(--accent); color: var(--accent); }
-  .pill.faulty { border-color: var(--danger); color: var(--danger); }
-
-  .profit-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    font-size: 12px;
-  }
-
-  .profit-label { color: var(--muted); }
-  .profit-val { font-weight: 500; }
-  .profit-val.pos { color: var(--profit); }
-  .profit-val.neg { color: var(--loss); }
-
-  .delete-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 16px;
-    cursor: pointer;
-    padding: 4px;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
-
-  /* BOTTOM NAV placeholder space */
-  .spacer { height: 20px; }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>Air<span>Pods</span> Tracker</h1>
+  <h1>AirPods Tracker</h1>
   <span class="badge">LIVE</span>
 </header>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
-  <button class="tab" onclick="switchTab('stock')">Stock</button>
-  <button class="tab" onclick="switchTab('sales')">Sales</button>
-  <button class="tab" onclick="switchTab('expenses')">Expenses</button>
+  <button class="tab active" onclick="tab('dash')">Dashboard</button>
+  <button class="tab" onclick="tab('stock')">Stock</button>
+  <button class="tab" onclick="tab('sales')">Sales</button>
+  <button class="tab" onclick="tab('exp')">Expenses</button>
 </div>
 
-<!-- DASHBOARD -->
-<div class="panel active" id="tab-dashboard">
-  <div class="summary-grid" style="margin-top:16px">
+<!-- DASH -->
+<div class="panel active" id="dash">
+  <div class="grid">
     <div class="card">
-      <div class="card-label">Total Revenue</div>
-      <div class="card-value purple" id="stat-revenue">£0</div>
+      <div class="label">Revenue</div>
+      <div class="value" id="rev">£0</div>
     </div>
     <div class="card">
-      <div class="card-label">Net Profit</div>
-      <div class="card-value green" id="stat-profit">£0</div>
+      <div class="label">Profit</div>
+      <div class="value" id="profit">£0</div>
     </div>
-    <div class="card">
-      <div class="card-label">Units In Stock</div>
-      <div class="card-value" id="stat-stock">0</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Total Expenses</div>
-      <div class="card-value red" id="stat-expenses">£0</div>
-    </div>
-  </div>
-
-  <div class="section-title">Recent Sales</div>
-  <div id="recent-sales-list">
-    <div class="empty-state"><div class="icon">📦</div>No sales yet</div>
   </div>
 </div>
 
 <!-- STOCK -->
-<div class="panel" id="tab-stock">
-  <div class="section-title" style="margin-top:4px">Add Stock</div>
-  <div class="form-card">
-    <div class="form-group">
-      <label>Item Name</label>
-      <input type="text" id="s-name" placeholder="e.g. AirPods Pro 2nd Gen">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Condition</label>
-        <select id="s-condition">
-          <option>New</option>
-          <option>Like New</option>
-          <option>Good</option>
-          <option>Faulty</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Buy Price (£)</label>
-        <input type="number" id="s-buy" placeholder="0.00">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Units</label>
-        <input type="number" id="s-units" placeholder="1">
-      </div>
-      <div class="form-group">
-        <label>Source</label>
-        <input type="text" id="s-source" placeholder="e.g. eBay">
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="addStock()">+ Add to Stock</button>
-  </div>
-
-  <div class="section-title">Current Stock</div>
-  <div id="stock-list">
-    <div class="empty-state"><div class="icon">📱</div>No stock added yet</div>
-  </div>
+<div class="panel" id="stock">
+  <input id="sname" placeholder="Item">
+  <input id="sprice" placeholder="Buy price">
+  <button class="add" onclick="addStock()">Add Stock</button>
+  <div id="stockList"></div>
 </div>
 
 <!-- SALES -->
-<div class="panel" id="tab-sales">
-  <div class="section-title" style="margin-top:4px">Log a Sale</div>
-  <div class="form-card">
-    <div class="form-group">
-      <label>Item Sold</label>
-      <input type="text" id="sl-name" placeholder="e.g. AirPods Pro 2nd Gen">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Sale Price (£)</label>
-        <input type="number" id="sl-sale" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label>Buy Price (£)</label>
-        <input type="number" id="sl-buy" placeholder="0.00">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Platform</label>
-        <select id="sl-platform">
-          <option>eBay</option>
-          <option>Depop</option>
-          <option>Vinted</option>
-          <option>Cash</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Fees (£)</label>
-        <input type="number" id="sl-fees" placeholder="0.00">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Date Sold</label>
-      <input type="date" id="sl-date">
-    </div>
-    <button class="btn btn-primary" onclick="addSale()">+ Log Sale</button>
-  </div>
-
-  <div class="section-title">Sales History</div>
-  <div id="sales-list">
-    <div class="empty-state"><div class="icon">💰</div>No sales logged yet</div>
-  </div>
+<div class="panel" id="sales">
+  <input id="slname" placeholder="Item sold">
+  <input id="slprice" placeholder="Sale price">
+  <button class="add" onclick="addSale()">Log Sale</button>
+  <div id="salesList"></div>
 </div>
 
-<!-- EXPENSES -->
-<div class="panel" id="tab-expenses">
-  <div class="section-title" style="margin-top:4px">Add Expense</div>
-  <div class="form-card">
-    <div class="form-group">
-      <label>Description</label>
-      <input type="text" id="e-desc" placeholder="e.g. Bubble wrap">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Amount (£)</label>
-        <input type="number" id="e-amount" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select id="e-cat">
-          <option>Packaging</option>
-          <option>Fees</option>
-          <option>Tools</option>
-          <option>Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Date</label>
-      <input type="date" id="e-date">
-    </div>
-    <button class="btn btn-primary" onclick="addExpense()">+ Add Expense</button>
-  </div>
-
-  <div class="section-title">Expense History</div>
-  <div id="expenses-list">
-    <div class="empty-state"><div class="icon">🧾</div>No expenses yet</div>
-  </div>
+<!-- EXP -->
+<div class="panel" id="exp">
+  <input id="edesc" placeholder="Expense">
+  <input id="eamt" placeholder="Amount">
+  <button class="add" onclick="addExp()">Add Expense</button>
+  <div id="expList"></div>
 </div>
 
-<script>
-  let data = JSON.parse(localStorage.getItem('airpods-tracker') || '{"stock":[],"sales":[],"expenses":[]}');
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  function save() {
-    localStorage.setItem('airpods-tracker', JSON.stringify(data));
-  }
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "inventory-40e86.firebaseapp.com",
+  projectId: "inventory-40e86",
+  storageBucket: "inventory-40e86.appspot.com",
+  messagingSenderId: "415196333352",
+  appId: "1:415196333352:web:6e1aef2eb13d7d40a2bc1d"
+};
 
-  function switchTab(tab) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    event.target.classList.add('active');
-    if (tab === 'dashboard') renderDashboard();
-  }
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  function fmt(n) { return '£' + parseFloat(n || 0).toFixed(2); }
+let stock = [], sales = [], expenses = [];
 
-  function addStock() {
-    const name = document.getElementById('s-name').value.trim();
-    const buy = parseFloat(document.getElementById('s-buy').value) || 0;
-    const units = parseInt(document.getElementById('s-units').value) || 1;
-    const condition = document.getElementById('s-condition').value;
-    const source = document.getElementById('s-source').value.trim();
-    if (!name) return alert('Enter an item name');
-    data.stock.push({ id: Date.now(), name, buy, units, condition, source });
-    save(); renderStock(); renderDashboard();
-    document.getElementById('s-name').value = '';
-    document.getElementById('s-buy').value = '';
-    document.getElementById('s-units').value = '';
-    document.getElementById('s-source').value = '';
-  }
+function listen() {
+  onSnapshot(collection(db,"stock"), snap=>{
+    stock = snap.docs.map(d=>d.data());
+    render();
+  });
 
-  function addSale() {
-    const name = document.getElementById('sl-name').value.trim();
-    const sale = parseFloat(document.getElementById('sl-sale').value) || 0;
-    const buy = parseFloat(document.getElementById('sl-buy').value) || 0;
-    const fees = parseFloat(document.getElementById('sl-fees').value) || 0;
-    const platform = document.getElementById('sl-platform').value;
-    const date = document.getElementById('sl-date').value || new Date().toISOString().split('T')[0];
-    if (!name) return alert('Enter an item name');
-    data.sales.push({ id: Date.now(), name, sale, buy, fees, platform, date });
-    save(); renderSales(); renderDashboard();
-    document.getElementById('sl-name').value = '';
-    document.getElementById('sl-sale').value = '';
-    document.getElementById('sl-buy').value = '';
-    document.getElementById('sl-fees').value = '';
-  }
+  onSnapshot(collection(db,"sales"), snap=>{
+    sales = snap.docs.map(d=>d.data());
+    render();
+  });
 
-  function addExpense() {
-    const desc = document.getElementById('e-desc').value.trim();
-    const amount = parseFloat(document.getElementById('e-amount').value) || 0;
-    const cat = document.getElementById('e-cat').value;
-    const date = document.getElementById('e-date').value || new Date().toISOString().split('T')[0];
-    if (!desc) return alert('Enter a description');
-    data.expenses.push({ id: Date.now(), desc, amount, cat, date });
-    save(); renderExpenses(); renderDashboard();
-    document.getElementById('e-desc').value = '';
-    document.getElementById('e-amount').value = '';
-  }
+  onSnapshot(collection(db,"expenses"), snap=>{
+    expenses = snap.docs.map(d=>d.data());
+    render();
+  });
+}
 
-  function deleteItem(type, id) {
-    data[type] = data[type].filter(i => i.id !== id);
-    save();
-    if (type === 'stock') renderStock();
-    if (type === 'sales') renderSales();
-    if (type === 'expenses') renderExpenses();
-    renderDashboard();
-  }
+listen();
 
-  function condClass(c) {
-    if (c === 'New' || c === 'Like New') return 'new';
-    if (c === 'Good') return 'good';
-    if (c === 'Faulty') return 'faulty';
-    return '';
-  }
+window.addStock = async function(){
+  await addDoc(collection(db,"stock"), {
+    name: sname.value,
+    price: Number(sprice.value)
+  });
+}
 
-  function renderStock() {
-    const el = document.getElementById('stock-list');
-    if (!data.stock.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📱</div>No stock added yet</div>'; return; }
-    el.innerHTML = data.stock.map(i => `
-      <div class="list-item">
-        <button class="delete-btn" onclick="deleteItem('stock',${i.id})">✕</button>
-        <div class="list-item-header">
-          <div class="item-name">${i.name}</div>
-          <div class="item-price">${fmt(i.buy)}</div>
-        </div>
-        <div class="item-meta">
-          <span class="pill ${condClass(i.condition)}">${i.condition}</span>
-          <span class="pill">×${i.units} units</span>
-          ${i.source ? `<span class="pill">${i.source}</span>` : ''}
-        </div>
-      </div>
-    `).join('');
-  }
+window.addSale = async function(){
+  await addDoc(collection(db,"sales"), {
+    name: slname.value,
+    price: Number(slprice.value)
+  });
+}
 
-  function renderSales() {
-    const el = document.getElementById('sales-list');
-    if (!data.sales.length) { el.innerHTML = '<div class="empty-state"><div class="icon">💰</div>No sales logged yet</div>'; return; }
-    el.innerHTML = data.sales.map(i => {
-      const profit = i.sale - i.buy - i.fees;
-      return `
-        <div class="list-item">
-          <button class="delete-btn" onclick="deleteItem('sales',${i.id})">✕</button>
-          <div class="list-item-header">
-            <div class="item-name">${i.name}</div>
-            <div class="item-price">${fmt(i.sale)}</div>
-          </div>
-          <div class="item-meta">
-            <span class="pill">${i.platform}</span>
-            <span class="pill">${i.date}</span>
-            ${i.fees ? `<span class="pill">Fees: ${fmt(i.fees)}</span>` : ''}
-          </div>
-          <div class="profit-row">
-            <span class="profit-label">Net Profit</span>
-            <span class="profit-val ${profit >= 0 ? 'pos' : 'neg'}">${fmt(profit)}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
+window.addExp = async function(){
+  await addDoc(collection(db,"expenses"), {
+    desc: edesc.value,
+    amount: Number(eamt.value)
+  });
+}
 
-  function renderExpenses() {
-    const el = document.getElementById('expenses-list');
-    if (!data.expenses.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🧾</div>No expenses yet</div>'; return; }
-    el.innerHTML = data.expenses.map(i => `
-      <div class="list-item">
-        <button class="delete-btn" onclick="deleteItem('expenses',${i.id})">✕</button>
-        <div class="list-item-header">
-          <div class="item-name">${i.desc}</div>
-          <div class="item-price" style="color:var(--danger)">${fmt(i.amount)}</div>
-        </div>
-        <div class="item-meta">
-          <span class="pill">${i.cat}</span>
-          <span class="pill">${i.date}</span>
-        </div>
-      </div>
-    `).join('');
-  }
+window.tab = function(t){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(t).classList.add('active');
+  event.target.classList.add('active');
+}
 
-  function renderDashboard() {
-    const revenue = data.sales.reduce((a, i) => a + i.sale, 0);
-    const salesProfit = data.sales.reduce((a, i) => a + (i.sale - i.buy - i.fees), 0);
-    const expenses = data.expenses.reduce((a, i) => a + i.amount, 0);
-    const profit = salesProfit - expenses;
-    const stock = data.stock.reduce((a, i) => a + i.units, 0);
-    document.getElementById('stat-revenue').textContent = fmt(revenue);
-    document.getElementById('stat-profit').textContent = fmt(profit);
-    document.getElementById('stat-profit').className = 'card-value ' + (profit >= 0 ? 'green' : 'red');
-    document.getElementById('stat-stock').textContent = stock;
-    document.getElementById('stat-expenses').textContent = fmt(expenses);
+function render(){
+  stockList.innerHTML = stock.map(i=>`<div class="item">${i.name} £${i.price}</div>`).join('');
+  salesList.innerHTML = sales.map(i=>`<div class="item">${i.name} £${i.price}</div>`).join('');
+  expList.innerHTML = expenses.map(i=>`<div class="item">${i.desc} £${i.amount}</div>`).join('');
 
-    const recentEl = document.getElementById('recent-sales-list');
-    const recent = [...data.sales].sort((a,b) => b.id - a.id).slice(0, 3);
-    if (!recent.length) { recentEl.innerHTML = '<div class="empty-state"><div class="icon">📦</div>No sales yet</div>'; return; }
-    recentEl.innerHTML = recent.map(i => {
-      const profit = i.sale - i.buy - i.fees;
-      return `
-        <div class="list-item">
-          <div class="list-item-header">
-            <div class="item-name">${i.name}</div>
-            <div class="item-price">${fmt(i.sale)}</div>
-          </div>
-          <div class="profit-row">
-            <span class="profit-label">${i.platform} · ${i.date}</span>
-            <span class="profit-val ${profit >= 0 ? 'pos' : 'neg'}">${fmt(profit)}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
+  let revenue = sales.reduce((a,b)=>a+(b.price||0),0);
+  let profit = revenue - expenses.reduce((a,b)=>a+(b.amount||0),0);
 
-  // Init
-  renderDashboard();
-  renderStock();
-  renderSales();
-  renderExpenses();
-
-  // Set today's date as default
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('sl-date').value = today;
-  document.getElementById('e-date').value = today;
+  rev.innerText = "£"+revenue;
+  document.getElementById("profit").innerText = "£"+profit;
+}
 </script>
+
 </body>
 </html>
