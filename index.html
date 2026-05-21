@@ -217,7 +217,7 @@
   }
 
   .btn-primary { background: var(--accent); color: white; margin-bottom: 8px; }
-  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); margin-bottom: 8px; }
   .btn-danger { background: var(--danger); color: white; }
   .btn:active { opacity: 0.8; transform: scale(0.98); }
 
@@ -321,6 +321,11 @@
     border-radius: 12px;
     border: 1px solid var(--border) !important;
     overflow: hidden;
+  }
+  #reader video {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover;
   }
   #reader button {
     background: var(--accent) !important;
@@ -451,7 +456,12 @@
 </div>
 
 <div class="panel" id="tab-scanner">
-  <div class="section-title" style="margin-top:4px">Inbuilt Live QR Scanner</div>
+  <div class="section-title" style="margin-top:4px">Live High-Scannability Reader</div>
+  
+  <div style="margin-bottom: 12px; display: flex; gap: 8px;">
+    <button class="btn btn-secondary" style="font-size:12px; padding:8px;" onclick="toggleCameraFacing()">🔄 Switch Front/Back Lens</button>
+  </div>
+
   <div id="reader" style="margin-bottom: 20px;"></div>
   
   <div class="section-title">Scanned Product Details</div>
@@ -590,6 +600,7 @@
   let data = JSON.parse(localStorage.getItem('airpods-tracker') || '{"stock":[],"sales":[],"expenses":[]}');
   let html5QrcodeScanner = null;
   let currentlyScanningSku = null;
+  let currentCameraMode = "environment"; // Defaults to back camera
 
   function save() {
     localStorage.setItem('airpods-tracker', JSON.stringify(data));
@@ -778,8 +789,8 @@
          qrBox.innerHTML = ""; 
          new QRCode(qrBox, {
            text: i.sku,
-           width: 110,
-           height: 110,
+           width: 130,
+           height: 130,
            colorDark: "#000000",
            colorLight: "#ffffff",
            correctLevel: QRCode.CorrectLevel.H
@@ -823,8 +834,8 @@
             
             new QRCode(document.getElementById("p-qr-" + i.sku), {
               text: i.sku,
-              width: 110,
-              height: 110,
+              width: 120,
+              height: 120,
               colorDark: "#000000",
               colorLight: "#ffffff",
               correctLevel: QRCode.CorrectLevel.H
@@ -846,10 +857,22 @@
     document.getElementById('scan-result-card').style.display = 'none';
     document.getElementById('scan-placeholder').style.display = 'block';
 
+    if(html5QrcodeScanner) {
+      stopScanner();
+    }
+
     html5QrcodeScanner = new Html5Qrcode("reader");
+    
+    // Config optimized to use entire view instead of forcing tiny crops
+    const config = { 
+      fps: 20,
+      rememberLastUsedCamera: true,
+      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    };
+
     html5QrcodeScanner.start(
-      { facingMode: "environment" }, 
-      { fps: 15, qrbox: { width: 220, height: 220 } },
+      { facingMode: currentCameraMode }, 
+      config,
       onScanSuccess,
       onScanFailure
     ).catch(err => {
@@ -857,16 +880,22 @@
     });
   }
 
+  function toggleCameraFacing() {
+    currentCameraMode = (currentCameraMode === "environment") ? "user" : "environment";
+    initScanner();
+  }
+
   function stopScanner() {
     if(html5QrcodeScanner) {
       html5QrcodeScanner.stop().then(() => {
         html5QrcodeScanner = null;
-      }).catch(err => console.log(err));
+      }).catch(err => console.log("Stop error:", err));
     }
   }
 
   function onScanSuccess(decodedText, decodedResult) {
-    const item = data.stock.find(i => i.sku === decodedText.trim());
+    const cleanText = decodedText.trim();
+    const item = data.stock.find(i => i.sku === cleanText);
     
     if(item) {
       if (currentlyScanningSku === item.sku) return;
@@ -881,6 +910,9 @@
       document.getElementById('scan-model').textContent = item.model;
       document.getElementById('scan-serial').textContent = item.serial;
       document.getElementById('scan-status-select').value = item.status || 'In Stock';
+      
+      // Flash confirmation to user
+      if(navigator.vibrate) navigator.vibrate(100);
     }
   }
 
