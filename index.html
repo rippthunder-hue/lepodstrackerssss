@@ -7,127 +7,120 @@
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
 
-  :root {
-    --bg:#0a0a0f;
-    --surface:#13131a;
-    --surface2:#1c1c26;
-    --border:#2a2a3a;
-    --accent:#7c6aff;
-    --accent2:#00e5b0;
-    --danger:#ff4f6a;
-    --text:#e8e8f0;
-    --muted:#6b6b80;
-  }
+:root {
+  --bg:#0a0a0f;
+  --surface:#13131a;
+  --surface2:#1c1c26;
+  --border:#2a2a3a;
+  --accent:#7c6aff;
+  --accent2:#00e5b0;
+  --danger:#ff4f6a;
+  --text:#e8e8f0;
+  --muted:#6b6b80;
+}
 
-  *{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box}
 
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:'DM Mono', monospace;
-  }
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Mono', monospace;
+  min-height:100vh;
+  padding-bottom:80px;
+}
 
-  header{
-    padding:16px;
-    background:var(--surface);
-    border-bottom:1px solid var(--border);
-    display:flex;
-    justify-content:space-between;
-  }
+header{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
+}
 
-  header h1{
-    font-family:'Syne';
-    font-weight:800;
-  }
+header h1{
+  font-family:'Syne';
+  font-weight:800;
+}
 
-  .badge{
-    background:var(--accent);
-    padding:3px 10px;
-    border-radius:20px;
-    font-size:10px;
-  }
+header h1 span{color:var(--accent)}
 
-  .tabs{
-    display:flex;
-    background:var(--surface);
-    border-bottom:1px solid var(--border);
-  }
+.badge{
+  background:var(--accent);
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:10px;
+}
 
-  .tab{
-    flex:1;
-    padding:12px;
-    background:none;
-    border:none;
-    color:var(--muted);
-    cursor:pointer;
-  }
+.tabs{
+  display:flex;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
 
-  .tab.active{
-    color:var(--accent);
-    border-bottom:2px solid var(--accent);
-  }
+.tab{
+  flex:1;
+  padding:12px;
+  background:none;
+  border:none;
+  color:var(--muted);
+}
 
-  .panel{display:none;padding:16px}
-  .panel.active{display:block}
+.tab.active{
+  color:var(--accent);
+  border-bottom:2px solid var(--accent);
+}
 
-  .grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-    margin-top:16px;
-  }
+.panel{display:none;padding:16px}
+.panel.active{display:block}
 
-  .card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    padding:14px;
-    border-radius:10px;
-  }
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
 
-  .label{
-    font-size:10px;
-    color:var(--muted);
-  }
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  padding:14px;
+  border-radius:10px;
+}
 
-  .value{
-    font-family:'Syne';
-    font-size:20px;
-    margin-top:6px;
-  }
+.label{font-size:10px;color:var(--muted)}
+.value{font-family:'Syne';font-size:20px;margin-top:6px}
 
-  input,select{
-    width:100%;
-    padding:10px;
-    margin:6px 0;
-    background:var(--surface2);
-    border:1px solid var(--border);
-    color:var(--text);
-    border-radius:8px;
-  }
+input,select{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:8px;
+}
 
-  button.add{
-    width:100%;
-    padding:12px;
-    background:var(--accent);
-    border:none;
-    color:white;
-    font-family:'Syne';
-    font-weight:700;
-    border-radius:10px;
-  }
+button.add{
+  width:100%;
+  padding:12px;
+  background:var(--accent);
+  border:none;
+  color:#fff;
+  font-weight:700;
+  border-radius:10px;
+}
 
-  .item{
-    background:var(--surface);
-    padding:12px;
-    margin-top:10px;
-    border-radius:10px;
-    border:1px solid var(--border);
-  }
-
+.item{
+  background:var(--surface);
+  padding:12px;
+  margin-top:10px;
+  border-radius:10px;
+  border:1px solid var(--border);
+}
 </style>
 </head>
 
@@ -145,7 +138,6 @@
   <button class="tab" onclick="tab('exp')">Expenses</button>
 </div>
 
-<!-- DASH -->
 <div class="panel active" id="dash">
   <div class="grid">
     <div class="card">
@@ -159,7 +151,6 @@
   </div>
 </div>
 
-<!-- STOCK -->
 <div class="panel" id="stock">
   <input id="sname" placeholder="Item">
   <input id="sprice" placeholder="Buy price">
@@ -167,7 +158,6 @@
   <div id="stockList"></div>
 </div>
 
-<!-- SALES -->
 <div class="panel" id="sales">
   <input id="slname" placeholder="Item sold">
   <input id="slprice" placeholder="Sale price">
@@ -175,7 +165,6 @@
   <div id="salesList"></div>
 </div>
 
-<!-- EXP -->
 <div class="panel" id="exp">
   <input id="edesc" placeholder="Expense">
   <input id="eamt" placeholder="Amount">
@@ -185,10 +174,10 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
+  apiKey: "YOUR_API_KEY",
   authDomain: "inventory-40e86.firebaseapp.com",
   projectId: "inventory-40e86",
   storageBucket: "inventory-40e86.appspot.com",
@@ -199,65 +188,53 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let stock = [], sales = [], expenses = [];
+const ref = doc(db, "tracker", "main");
 
-function listen() {
-  onSnapshot(collection(db,"stock"), snap=>{
-    stock = snap.docs.map(d=>d.data());
+let data = { stock: [], sales: [], expenses: [] };
+
+function save() {
+  setDoc(ref, data);
+}
+
+onSnapshot(ref, snap => {
+  if (snap.exists()) {
+    data = snap.data();
     render();
-  });
+  }
+});
 
-  onSnapshot(collection(db,"sales"), snap=>{
-    sales = snap.docs.map(d=>d.data());
-    render();
-  });
-
-  onSnapshot(collection(db,"expenses"), snap=>{
-    expenses = snap.docs.map(d=>d.data());
-    render();
-  });
+window.addStock = function () {
+  data.stock.push({ name: sname.value, price: Number(sprice.value) });
+  save(); render();
 }
 
-listen();
-
-window.addStock = async function(){
-  await addDoc(collection(db,"stock"), {
-    name: sname.value,
-    price: Number(sprice.value)
-  });
+window.addSale = function () {
+  data.sales.push({ name: slname.value, price: Number(slprice.value) });
+  save(); render();
 }
 
-window.addSale = async function(){
-  await addDoc(collection(db,"sales"), {
-    name: slname.value,
-    price: Number(slprice.value)
-  });
+window.addExp = function () {
+  data.expenses.push({ desc: edesc.value, amount: Number(eamt.value) });
+  save(); render();
 }
 
-window.addExp = async function(){
-  await addDoc(collection(db,"expenses"), {
-    desc: edesc.value,
-    amount: Number(eamt.value)
-  });
-}
-
-window.tab = function(t){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+window.tab = function (t) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.getElementById(t).classList.add('active');
   event.target.classList.add('active');
 }
 
-function render(){
-  stockList.innerHTML = stock.map(i=>`<div class="item">${i.name} £${i.price}</div>`).join('');
-  salesList.innerHTML = sales.map(i=>`<div class="item">${i.name} £${i.price}</div>`).join('');
-  expList.innerHTML = expenses.map(i=>`<div class="item">${i.desc} £${i.amount}</div>`).join('');
+function render() {
+  stockList.innerHTML = data.stock.map(i => `<div class="item">${i.name} £${i.price}</div>`).join('');
+  salesList.innerHTML = data.sales.map(i => `<div class="item">${i.name} £${i.price}</div>`).join('');
+  expList.innerHTML = data.expenses.map(i => `<div class="item">${i.desc} £${i.amount}</div>`).join('');
 
-  let revenue = sales.reduce((a,b)=>a+(b.price||0),0);
-  let profit = revenue - expenses.reduce((a,b)=>a+(b.amount||0),0);
+  const revenue = data.sales.reduce((a,b)=>a+(b.price||0),0);
+  const expenses = data.expenses.reduce((a,b)=>a+(b.amount||0),0);
 
   rev.innerText = "£"+revenue;
-  document.getElementById("profit").innerText = "£"+profit;
+  profit.innerText = "£"+(revenue-expenses);
 }
 </script>
 
