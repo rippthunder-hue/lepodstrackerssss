@@ -1,14 +1,3 @@
-To turn this into a true hardware-integrated setup, we need to add two major features to your HTML file:
-
-1. **A Barcode Generator:** This uses a lightweight, reliable JavaScript library (`JsBarcode`) to automatically turn your generated SKUs into visual, printable barcodes right on the screen.
-2. **An Inbuilt Barcode Scanner:** This uses your phone or laptop camera via a widely trusted library (`Html5Qrcode`) to scan those printed barcodes, instantly pull up the item, and let you update its business status.
-
-I have updated your code below. I also added a **Status tracking system** (`In Stock`, `Listed`, `Sold`, `Packed`, `Sent Out`) so you can manage the lifecycle of each item.
-
-### How to use it:
-
-* **To Print:** Go to the **Stock** tab, add your items, and click **"Print Barcodes"**. It will open a clean, printer-friendly window with just the barcodes and SKU details for you to screenshot or print.
-* **To Scan:** Go to the **Scanner** tab, grant camera access, and point it at your barcode. It will instantly flash the item's details, model/serial info, and let you change its status on the fly.
 
 ```html
 <!DOCTYPE html>
