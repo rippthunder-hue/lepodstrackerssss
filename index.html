@@ -325,9 +325,10 @@
   #reader video {
     width: 100% !important;
     height: auto !important;
+    max-height: 350px;
     object-fit: cover;
   }
-  #reader button {
+  #reader button, #reader input[type="file"] {
     background: var(--accent) !important;
     color: white !important;
     border: none !important;
@@ -339,6 +340,7 @@
     cursor: pointer;
     margin: 10px !important;
   }
+  #reader a { color: var(--accent2) !important; font-size: 12px; display: block; padding: 10px; }
   
   .qr-wrapper {
     background: #ffffff;
@@ -456,10 +458,11 @@
 </div>
 
 <div class="panel" id="tab-scanner">
-  <div class="section-title" style="margin-top:4px">Live High-Scannability Reader</div>
+  <div class="section-title" style="margin-top:4px">Live QR Scan & Photo Engine</div>
   
   <div style="margin-bottom: 12px; display: flex; gap: 8px;">
-    <button class="btn btn-secondary" style="font-size:12px; padding:8px;" onclick="toggleCameraFacing()">🔄 Switch Front/Back Lens</button>
+    <button class="btn btn-secondary" style="font-size:12px; padding:8px; width:50%;" onclick="toggleCameraFacing()">🔄 Switch Lens</button>
+    <button class="btn btn-secondary" style="font-size:12px; padding:8px; width:50%;" onclick="initScanner(true)">📁 File/Camera Selector</button>
   </div>
 
   <div id="reader" style="margin-bottom: 20px;"></div>
@@ -505,7 +508,7 @@
     </div>
   </div>
   <div id="scan-placeholder" class="empty-state">
-    <div class="icon">📷</div> Scan an item's QR code to dynamically adjust its lifecycle status.
+    <div class="icon">📷</div> Point your camera directly at an inventory item's QR or click 'File Selector' to take a fallback photo.
   </div>
 </div>
 
@@ -600,7 +603,7 @@
   let data = JSON.parse(localStorage.getItem('airpods-tracker') || '{"stock":[],"sales":[],"expenses":[]}');
   let html5QrcodeScanner = null;
   let currentlyScanningSku = null;
-  let currentCameraMode = "environment"; // Defaults to back camera
+  let currentCameraMode = "environment"; 
 
   function save() {
     localStorage.setItem('airpods-tracker', JSON.stringify(data));
@@ -613,7 +616,7 @@
     if(window.event && window.event.target) window.event.target.classList.add('active');
     
     if (tab === 'scanner') {
-      initScanner();
+      initScanner(false);
     } else {
       stopScanner();
     }
@@ -789,8 +792,8 @@
          qrBox.innerHTML = ""; 
          new QRCode(qrBox, {
            text: i.sku,
-           width: 130,
-           height: 130,
+           width: 140,
+           height: 140,
            colorDark: "#000000",
            colorLight: "#ffffff",
            correctLevel: QRCode.CorrectLevel.H
@@ -851,8 +854,8 @@
     printWindow.document.close();
   }
 
-  /* HARDWARE SCANNING LOGIC CONTROLLERS */
-  function initScanner() {
+  /* RE-ENGINEERED SCANNING LOGIC WITH PHOTO/FILE CAPABILITY */
+  function initScanner(forceFileFallback = false) {
     currentlyScanningSku = null;
     document.getElementById('scan-result-card').style.display = 'none';
     document.getElementById('scan-placeholder').style.display = 'block';
@@ -861,13 +864,38 @@
       stopScanner();
     }
 
+    // Recreate target box
+    document.getElementById('reader').innerHTML = "";
+
+    if (forceFileFallback) {
+      // Use built-in library file system parser
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      document.getElementById('reader').innerHTML = `
+        <div style="padding: 20px; text-align: center;">
+          <p style="font-size:12px; margin-bottom:10px; color:var(--muted)">Take a high-res snap or pick an image file:</p>
+          <input type="file" id="qr-input-file" accept="image/*" style="background:var(--accent); color:white; padding:8px; border-radius:6px;">
+        </div>
+      `;
+      document.getElementById('qr-input-file').addEventListener('change', e => {
+        if (e.target.files.length == 0) return;
+        const imageFile = e.target.files[0];
+        html5QrcodeScanner.scanFile(imageFile, true)
+          .then(decodedText => {
+            onScanSuccess(decodedText);
+          })
+          .catch(err => {
+            alert("Could not identify a valid QR structure in this photo. Try closer with better lightning.");
+          });
+      });
+      return;
+    }
+
+    // Standard Live Cam View
     html5QrcodeScanner = new Html5Qrcode("reader");
-    
-    // Config optimized to use entire view instead of forcing tiny crops
     const config = { 
-      fps: 20,
+      fps: 24,
       rememberLastUsedCamera: true,
-      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+      aspectRatio: 1.0
     };
 
     html5QrcodeScanner.start(
@@ -876,30 +904,30 @@
       onScanSuccess,
       onScanFailure
     ).catch(err => {
-      console.error("Camera setup failed", err);
+      console.log("Live stream failed, auto switching to File/Photo capture fallback.");
+      initScanner(true);
     });
   }
 
   function toggleCameraFacing() {
     currentCameraMode = (currentCameraMode === "environment") ? "user" : "environment";
-    initScanner();
+    initScanner(false);
   }
 
   function stopScanner() {
     if(html5QrcodeScanner) {
-      html5QrcodeScanner.stop().then(() => {
-        html5QrcodeScanner = null;
-      }).catch(err => console.log("Stop error:", err));
+      try {
+        html5QrcodeScanner.stop().catch(e => console.log(e));
+      } catch(e) {}
+      html5QrcodeScanner = null;
     }
   }
 
-  function onScanSuccess(decodedText, decodedResult) {
+  function onScanSuccess(decodedText) {
     const cleanText = decodedText.trim();
     const item = data.stock.find(i => i.sku === cleanText);
     
     if(item) {
-      if (currentlyScanningSku === item.sku) return;
-      
       currentlyScanningSku = item.sku;
       document.getElementById('scan-placeholder').style.display = 'none';
       document.getElementById('scan-result-card').style.display = 'block';
@@ -911,8 +939,9 @@
       document.getElementById('scan-serial').textContent = item.serial;
       document.getElementById('scan-status-select').value = item.status || 'In Stock';
       
-      // Flash confirmation to user
-      if(navigator.vibrate) navigator.vibrate(100);
+      if(navigator.vibrate) navigator.vibrate(120);
+    } else {
+      alert(`Decoded code matches SKU: "${cleanText}" but no matching stock entry exists in local database.`);
     }
   }
 
@@ -1016,7 +1045,6 @@
   renderSales();
   renderExpenses();
 
-  // Set today's date as default
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('sl-date').value = today;
   document.getElementById('e-date').value = today;
