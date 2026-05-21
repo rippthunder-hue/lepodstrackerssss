@@ -1,5 +1,3 @@
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0a0a0f">
 
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
@@ -272,7 +270,7 @@
   .pill.faulty { border-color: var(--danger); color: var(--danger); }
   .pill.sku { border-color: var(--accent); color: #fff; background: rgba(124, 106, 255, 0.2); font-weight: bold; }
   
-  /* Status Color Handling */
+  /* Status Colors */
   .pill.status-instock { border-color: var(--accent2); color: var(--accent2); }
   .pill.status-listed { border-color: #ffb86c; color: #ffb86c; }
   .pill.status-sold { border-color: var(--accent); color: var(--accent); }
@@ -323,20 +321,23 @@
     border: 1px solid var(--border) !important;
     overflow: hidden;
   }
-  #reader __button__ {
+  #reader button {
     background: var(--accent) !important;
     color: white !important;
     border: none !important;
-    padding: 8px 14px !important;
-    border-radius: 6px !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
     font-family: 'Syne', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
     cursor: pointer;
+    margin: 10px !important;
   }
   
-  .barcode-wrapper {
+  .qr-wrapper {
     background: white;
-    padding: 10px;
-    border-radius: 6px;
+    padding: 12px;
+    border-radius: 8px;
     display: inline-block;
     margin-top: 8px;
   }
@@ -348,7 +349,7 @@
 
 <header>
   <h1>Air<span>Pods</span> Tracker</h1>
-  <span class="badge">LIVE + SCANNER</span>
+  <span class="badge">LIVE + QR SCANNER</span>
 </header>
 
 <div class="tabs">
@@ -430,8 +431,8 @@
         </select>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="addStock()">+ Add to Stock & Generate SKU</button>
-    <button class="btn btn-secondary" onclick="printAllBarcodes()">🖨️ Print All Barcodes</button>
+    <button class="btn btn-primary" onclick="addStock()">+ Add to Stock & Generate QR</button>
+    <button class="btn btn-secondary" onclick="printAllQRs()">🖨️ Print All QR Labels</button>
   </div>
 
   <div class="section-title">Current Stock</div>
@@ -441,7 +442,7 @@
 </div>
 
 <div class="panel" id="tab-scanner">
-  <div class="section-title" style="margin-top:4px">Inbuilt Live Scanner</div>
+  <div class="section-title" style="margin-top:4px">Inbuilt Live QR Scanner</div>
   <div id="reader" style="margin-bottom: 20px;"></div>
   
   <div class="section-title">Scanned Product Details</div>
@@ -485,7 +486,7 @@
     </div>
   </div>
   <div id="scan-placeholder" class="empty-state">
-    <div class="icon">📷</div> Scan a barcode to pull up item information and change business status lifecycle.
+    <div class="icon">📷</div> Scan an item's QR code to dynamically adjust its lifecycle status.
   </div>
 </div>
 
@@ -589,9 +590,8 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    if(event && event.target) event.target.classList.add('active');
+    if(window.event && window.event.target) window.event.target.classList.add('active');
     
-    // Manage active camera cycles cleanly
     if (tab === 'scanner') {
       initScanner();
     } else {
@@ -624,7 +624,6 @@
 
     if (!name) return alert('Enter an item name');
 
-    // Generate strict distinct unique SKU identifier
     const sku = generateSKUString(condition, source);
 
     data.stock.push({ 
@@ -641,7 +640,6 @@
 
     save(); renderStock(); renderDashboard();
     
-    // Clear Input Forms
     document.getElementById('s-name').value = '';
     document.getElementById('s-model').value = '';
     document.getElementById('s-serial').value = '';
@@ -679,7 +677,6 @@
     
     if (!name) return alert('Enter an item name');
 
-    // If an item was picked from inventory array stack, update its core lifecycle tracking parameters
     if(sku) {
       const idx = data.stock.findIndex(i => i.sku === sku);
       if(idx !== -1) data.stock[idx].status = 'Sold';
@@ -748,57 +745,70 @@
           ${i.source ? `<span class="pill">${i.source}</span>` : ''}
         </div>
         <div style="text-align:center; margin-top:10px;">
-          <div class="barcode-wrapper"><svg id="barcode-${i.sku}"></svg></div>
+          <div class="qr-wrapper" id="qr-${i.sku}"></div>
         </div>
       </div>
     `).join('');
 
-    // Async draw cycle for barcodes vector rendering
+    // Dynamic generation of QR Codes inside elements
     data.stock.forEach(i => {
-      JsBarcode(`#barcode-${i.sku}`, i.sku, {
-        format: "CODE128",
-        width: 1.5,
-        height: 40,
-        displayValue: false
+      document.getElementById(`qr-${i.sku}`).innerHTML = ""; // Clear
+      new QRCode(document.getElementById(`qr-${i.sku}`), {
+        text: i.sku,
+        width: 90,
+        height: 90,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
       });
     });
   }
 
-  // Generate printer-friendly window frame loop logic execution
-  function printAllBarcodes() {
-    if(!data.stock.length) return alert('No stock items to print barcodes for.');
+  function printAllQRs() {
+    if(!data.stock.length) return alert('No stock items to generate labels for.');
     
     let printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
       <head>
-        <title>Print Barcodes</title>
+        <title>Print QR Labels</title>
         <style>
           body { font-family: monospace; padding:20px; text-align:center; background:#fff; color:#000; }
-          .barcode-tile { display:inline-block; border:1px dashed #ccc; padding:15px; margin:10px; text-align:center; }
-          .title { font-weight:bold; font-size:14px; margin-bottom:5px; }
-          .meta { font-size:10px; color:#555; margin-top:4px; }
+          .qr-tile { display:inline-block; border:1px dashed #bbb; padding:12px; margin:8px; text-align:center; background:#fff; width: 140px;}
+          .title { font-weight:bold; font-size:11px; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          .meta { font-size:9px; color:#333; margin-top:6px; line-height:1.2; }
+          .qr-holder { display:flex; justify-content:center; }
         </style>
-        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
       </head>
       <body>
-        <h2>AirPods Barcode Sheets</h2>
+        <h3>Inventory QR Labels Sheet</h3>
         <div id="container"></div>
         <script>
           const stock = ${JSON.stringify(data.stock)};
           const container = document.getElementById('container');
           stock.forEach(i => {
             const div = document.createElement('div');
-            div.className = 'barcode-tile';
+            div.className = 'qr-tile';
             div.innerHTML = \`
               <div class="title">\${i.name}</div>
-              <div><svg id="p-\${i.sku}"></svg></div>
-              <div class="meta">SKU: \${i.sku}<br>MOD: \${i.model} | SN: \${i.serial}</div>
+              <div class="qr-holder" id="p-qr-\${i.sku}"></div>
+              <div class="meta"><b>SKU:</b> \${i.sku}<br><b>MOD:</b> \${i.model}<br><b>SN:</b> \${i.serial}</div>
             \`;
             container.appendChild(div);
-            JsBarcode("#p-" + i.sku, i.sku, { format: "CODE128", width: 1.8, height: 50, displayValue: true });
+            
+            new QRCode(document.getElementById("p-qr-" + i.sku), {
+              text: i.sku,
+              width: 90,
+              height: 90,
+              colorDark: "#000000",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
+            });
           });
-          window.onload = function() { window.print(); }
+          window.onload = function() {
+            setTimeout(() => { window.print(); }, 600);
+          }
         <\/script>
       </body>
       </html>
@@ -815,11 +825,11 @@
     html5QrcodeScanner = new Html5Qrcode("reader");
     html5QrcodeScanner.start(
       { facingMode: "environment" }, 
-      { fps: 10, qrbox: { width: 250, height: 100 } },
+      { fps: 15, qrbox: { width: 220, height: 220 } }, // Square layout optimized for QR formats
       onScanSuccess,
       onScanFailure
     ).catch(err => {
-      console.error("Camera access failed", err);
+      console.error("Camera setup failed", err);
     });
   }
 
@@ -832,11 +842,12 @@
   }
 
   function onScanSuccess(decodedText, decodedResult) {
-    // Locate match within localized context array engine
     const item = data.stock.find(i => i.sku === decodedText.trim());
     
     if(item) {
-      // Audio or haptic response simulation checkpoint
+      // Avoid firing redundant triggers consecutively if already scanning the same item
+      if (currentlyScanningSku === item.sku) return;
+      
       currentlyScanningSku = item.sku;
       document.getElementById('scan-placeholder').style.display = 'none';
       document.getElementById('scan-result-card').style.display = 'block';
@@ -847,13 +858,11 @@
       document.getElementById('scan-model').textContent = item.model;
       document.getElementById('scan-serial').textContent = item.serial;
       document.getElementById('scan-status-select').value = item.status || 'In Stock';
-    } else {
-      alert(`Scanned SKU "${decodedText}" not found in current inventory.`);
     }
   }
 
   function onScanFailure(error) {
-    // Quiet parsing failure monitoring to prevent UI threading lockup loops
+    // Silent execution fallback to allow fluid stream reading
   }
 
   function updateScannedStatus() {
@@ -920,7 +929,6 @@
     const expenses = data.expenses.reduce((a, i) => a + i.amount, 0);
     const profit = salesProfit - expenses;
     
-    // Count active items only
     const stockCount = data.stock.filter(i => i.status !== 'Sold' && i.status !== 'Sent Out').length;
     
     document.getElementById('stat-revenue').textContent = fmt(revenue);
@@ -962,5 +970,3 @@
 </script>
 </body>
 </html>
-
-```
