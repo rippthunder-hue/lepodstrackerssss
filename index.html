@@ -218,6 +218,7 @@
 
   .btn-primary { background: var(--accent); color: white; margin-bottom: 8px; }
   .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: var(--danger); color: white; }
   .btn:active { opacity: 0.8; transform: scale(0.98); }
 
   /* LIST ITEMS */
@@ -335,11 +336,11 @@
   }
   
   .qr-wrapper {
-    background: white;
-    padding: 12px;
+    background: #ffffff;
+    padding: 10px;
     border-radius: 8px;
     display: inline-block;
-    margin-top: 8px;
+    margin-top: 10px;
   }
 
   .spacer { height: 20px; }
@@ -349,7 +350,7 @@
 
 <header>
   <h1>Air<span>Pods</span> Tracker</h1>
-  <span class="badge">LIVE + QR SCANNER</span>
+  <span class="badge">LIVE + QR ENGINE</span>
 </header>
 
 <div class="tabs">
@@ -383,6 +384,14 @@
   <div class="section-title">Recent Sales</div>
   <div id="recent-sales-list">
     <div class="empty-state"><div class="icon">📦</div>No sales yet</div>
+  </div>
+
+  <div class="section-title" style="margin-top:30px;">Wipe System Data</div>
+  <div class="form-card" style="border-color: rgba(255, 79, 106, 0.4);">
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.4;">
+      Clearing your tracker data resets all your arrays, storage metrics, inventory, and ledger history instantly. This cannot be undone.
+    </p>
+    <button class="btn btn-danger" onclick="clearAllData()">⚠️ Clear All Tracker Data</button>
   </div>
 </div>
 
@@ -454,7 +463,7 @@
     <div class="form-row">
       <div class="form-group">
         <label>SKU</label>
-        <div id="scan-sku" style="font-weight:bold;">-</div>
+        <div id="scan-sku" style="font-weight:bold; color:#fff;">-</div>
       </div>
       <div class="form-group">
         <label>Condition</label>
@@ -713,6 +722,18 @@
     renderDashboard();
   }
 
+  function clearAllData() {
+    if(confirm("Are you absolutely sure you want to delete everything? Your stock history, sales listings, and logs will be permanently erased.")) {
+      data = {"stock":[],"sales":[],"expenses":[]};
+      save();
+      renderDashboard();
+      renderStock();
+      renderSales();
+      renderExpenses();
+      alert("System wiped successfully.");
+    }
+  }
+
   function statusClass(s) {
     return 'status-' + (s || 'instock').toLowerCase().replace(/\s+/g, '');
   }
@@ -750,17 +771,20 @@
       </div>
     `).join('');
 
-    // Dynamic generation of QR Codes inside elements
+    // Render QR codes explicitly
     data.stock.forEach(i => {
-      document.getElementById(`qr-${i.sku}`).innerHTML = ""; // Clear
-      new QRCode(document.getElementById(`qr-${i.sku}`), {
-        text: i.sku,
-        width: 90,
-        height: 90,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
+      const qrBox = document.getElementById(`qr-${i.sku}`);
+      if(qrBox) {
+         qrBox.innerHTML = ""; 
+         new QRCode(qrBox, {
+           text: i.sku,
+           width: 110,
+           height: 110,
+           colorDark: "#000000",
+           colorLight: "#ffffff",
+           correctLevel: QRCode.CorrectLevel.H
+         });
+      }
     });
   }
 
@@ -774,10 +798,10 @@
         <title>Print QR Labels</title>
         <style>
           body { font-family: monospace; padding:20px; text-align:center; background:#fff; color:#000; }
-          .qr-tile { display:inline-block; border:1px dashed #bbb; padding:12px; margin:8px; text-align:center; background:#fff; width: 140px;}
-          .title { font-weight:bold; font-size:11px; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-          .meta { font-size:9px; color:#333; margin-top:6px; line-height:1.2; }
-          .qr-holder { display:flex; justify-content:center; }
+          .qr-tile { display:inline-block; border:1px dashed #bbb; padding:15px; margin:10px; text-align:center; background:#fff; width: 150px;}
+          .title { font-weight:bold; font-size:11px; margin-bottom:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          .meta { font-size:9px; color:#111; margin-top:8px; line-height:1.3; text-align:left;}
+          .qr-holder { display:flex; justify-content:center; padding: 5px 0;}
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
       </head>
@@ -793,21 +817,21 @@
             div.innerHTML = \`
               <div class="title">\${i.name}</div>
               <div class="qr-holder" id="p-qr-\${i.sku}"></div>
-              <div class="meta"><b>SKU:</b> \${i.sku}<br><b>MOD:</b> \${i.model}<br><b>SN:</b> \${i.serial}</div>
+              <div class="meta"><b>QR:</b> \${i.sku}<br><b>MOD:</b> \${i.model}<br><b>SN:</b> \${i.serial}</div>
             \`;
             container.appendChild(div);
             
             new QRCode(document.getElementById("p-qr-" + i.sku), {
               text: i.sku,
-              width: 90,
-              height: 90,
+              width: 110,
+              height: 110,
               colorDark: "#000000",
               colorLight: "#ffffff",
               correctLevel: QRCode.CorrectLevel.H
             });
           });
           window.onload = function() {
-            setTimeout(() => { window.print(); }, 600);
+            setTimeout(() => { window.print(); }, 700);
           }
         <\/script>
       </body>
@@ -825,7 +849,7 @@
     html5QrcodeScanner = new Html5Qrcode("reader");
     html5QrcodeScanner.start(
       { facingMode: "environment" }, 
-      { fps: 15, qrbox: { width: 220, height: 220 } }, // Square layout optimized for QR formats
+      { fps: 15, qrbox: { width: 220, height: 220 } },
       onScanSuccess,
       onScanFailure
     ).catch(err => {
@@ -845,7 +869,6 @@
     const item = data.stock.find(i => i.sku === decodedText.trim());
     
     if(item) {
-      // Avoid firing redundant triggers consecutively if already scanning the same item
       if (currentlyScanningSku === item.sku) return;
       
       currentlyScanningSku = item.sku;
@@ -861,9 +884,7 @@
     }
   }
 
-  function onScanFailure(error) {
-    // Silent execution fallback to allow fluid stream reading
-  }
+  function onScanFailure(error) {}
 
   function updateScannedStatus() {
     if(!currentlyScanningSku) return;
